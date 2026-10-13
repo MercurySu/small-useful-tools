@@ -4,7 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111319">
-  <title>色光 · 全屏颜色盘</title>
+  <title>全屏纯色屏幕｜在线颜色光与屏幕补光工具 - MercurySu</title>
+  <meta name="description" content="免费在线全屏纯色屏幕工具：通过颜色盘或 HEX 色号将电脑、手机浏览器显示为纯色光。适合临时屏幕补光、拍摄背景、桌面氛围光和纯色显示检查。无需安装。">
+  <link rel="canonical" href="https://mercurysu.github.io/small-useful-tools/color-light.html">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="Small Useful Tools">
+  <meta property="og:title" content="全屏纯色屏幕 - 免费在线颜色光工具">
+  <meta property="og:description" content="选取任意颜色，一键将屏幕变成纯色光源。Free fullscreen color screen and color light picker.">
+  <meta property="og:url" content="https://mercurysu.github.io/small-useful-tools/color-light.html">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "全屏纯色屏幕 · Fullscreen Color Light",
+    "url": "https://mercurysu.github.io/small-useful-tools/color-light.html",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "description": "免费在线全屏颜色光工具，支持颜色盘、HEX 颜色代码和屏幕纯色显示。",
+    "inLanguage": ["zh-CN", "en"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
   <style>
     * { box-sizing: border-box; }
     :root { color-scheme: dark; font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
@@ -26,6 +48,12 @@
     button { flex-shrink: 0; border: 0; border-radius: 9px; padding: 11px 14px; background: #dae3ff; color: #202634; font-size: 13px; font-weight: 600; cursor: pointer; }
     button:hover { background: #eef2ff; }
     .hint { margin: 20px 0 0; color: #868da0; font-size: 12px; line-height: 1.8; }
+    .back-link { margin: 0 0 20px; font-size: 13px; }
+    .back-link a, .details a { color: #a9caff; text-decoration: underline; text-underline-offset: 3px; }
+    .details { width: min(100% - 40px, 700px); margin: 0 auto; padding: 20px 0 72px; line-height: 1.85; color: #b9c0d2; }
+    .details h2 { margin: 18px 0 8px; color: #eef2ff; font-size: 20px; }
+    .details h3 { margin: 22px 0 4px; color: #eef2ff; font-size: 16px; }
+    .details p { margin: 8px 0; }
     #light { position: fixed; inset: 0; z-index: 9999; display: none; cursor: none; touch-action: none; }
     body.lighting { overflow: hidden; }
     body.lighting main { visibility: hidden; }
@@ -36,9 +64,10 @@
 <body>
   <main id="picker">
     <section class="panel" aria-label="全屏色光选择器">
+      <nav class="back-link" aria-label="返回首页"><a href="./">← 返回工具箱 / Back to tools</a></nav>
       <p class="eyebrow">COLOR LIGHT</p>
       <h1>让颜色铺满屏幕</h1>
-      <p class="intro">点选色盘上的任意颜色，即刻进入全屏色光。</p>
+      <p class="intro">点选颜色盘，或输入 HEX 色号，让电脑或手机浏览器显示纯色光。</p>
       <div class="wheel-wrap"><canvas id="wheel" width="640" height="640" tabindex="0" aria-label="颜色盘：点击选色；键盘用户可在下方输入颜色代码" role="img"></canvas></div>
       <div class="controls">
         <div class="label-row"><label for="brightness">颜色明度</label><output id="brightness-value" for="brightness">100%</output></div>
@@ -52,6 +81,17 @@
       <p class="hint">按任意键返回 · 手机可轻触屏幕返回<br>无需联网，下载后用浏览器打开即可。</p>
     </section>
   </main>
+  <section class="details" aria-labelledby="about-tool">
+    <h2 id="about-tool">免费在线全屏纯色屏幕工具</h2>
+    <p>不用安装软件，直接选择颜色就能把浏览器变成纯色屏幕。适合临时屏幕补光、摄影或视频拍摄背景、桌面氛围光，以及查看显示器在不同纯色下的显示情况。</p>
+    <h3>怎么使用？</h3>
+    <p>点击上方颜色盘选择颜色，或输入形如 #FF8800 的 HEX 颜色代码后点击「点亮屏幕」。屏幕将显示你选择的颜色。电脑按任意键返回，手机轻触屏幕返回。可以使用「颜色明度」滑块调整颜色盘的明度。</p>
+    <h3>使用提醒</h3>
+    <p>显示效果取决于设备的屏幕亮度、色彩设置和屏幕本身。本工具可用于简单的纯色展示，但不能替代专业的照明设备或显示器色彩校准仪器。</p>
+    <h2 lang="en">Free Fullscreen Color Screen</h2>
+    <p lang="en">Choose a color on the wheel or enter a HEX code to fill your screen with solid color. Use it for ambient lighting, temporary screen fill light, photography backgrounds, and simple solid-color display checks. Press any key to exit on desktop, or tap to return on mobile.</p>
+    <p><a href="./">浏览更多在线工具 / More tools</a></p>
+  </section>
   <div id="light" aria-hidden="true"></div>
   <script>
     'use strict';
