@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111319">
+  <title>色光 · 全屏颜色盘</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+    body { margin: 0; background: #111319; color: #f3f4f8; }
+    main { min-height: 100svh; display: grid; place-items: center; padding: 32px 20px; }
+    .panel { width: min(100%, 440px); text-align: center; }
+    .eyebrow { margin: 0 0 10px; color: #8d93a7; font-size: 11px; letter-spacing: .3em; }
+    h1 { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: .1em; }
+    .intro { margin: 12px 0 26px; color: #a5abbb; font-size: 14px; line-height: 1.8; }
+    .wheel-wrap { width: min(100%, 340px); margin: auto; }
+    canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 50%; cursor: crosshair; touch-action: none; outline-offset: 8px; }
+    .controls { margin-top: 28px; padding: 20px; border: 1px solid #2b2f3c; border-radius: 18px; background: #191c24; text-align: left; }
+    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+    output { color: #aeb4c7; font-variant-numeric: tabular-nums; }
+    input[type="range"] { display: block; width: 100%; margin: 16px 0 20px; accent-color: #b0c2ff; cursor: pointer; }
+    .entry { display: flex; align-items: center; gap: 10px; }
+    #swatch { width: 32px; height: 32px; flex-shrink: 0; border: 1px solid #ffffff28; border-radius: 9px; background: #80c4ff; }
+    #hex { min-width: 0; width: 100%; border: 1px solid #373d4c; border-radius: 9px; padding: 10px 12px; background: #111319; color: #e6e9f3; font: 14px ui-monospace, monospace; }
+    button { flex-shrink: 0; border: 0; border-radius: 9px; padding: 11px 14px; background: #dae3ff; color: #202634; font-size: 13px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #eef2ff; }
+    .hint { margin: 20px 0 0; color: #868da0; font-size: 12px; line-height: 1.8; }
+    #light { position: fixed; inset: 0; z-index: 9999; display: none; cursor: none; touch-action: none; }
+    body.lighting { overflow: hidden; }
+    body.lighting main { visibility: hidden; }
+    body.lighting #light { display: block; }
+    :fullscreen { background: var(--light-color, #111319); }
+  </style>
+</head>
+<body>
+  <main id="picker">
+    <section class="panel" aria-label="全屏色光选择器">
+      <p class="eyebrow">COLOR LIGHT</p>
+      <h1>让颜色铺满屏幕</h1>
+      <p class="intro">点选色盘上的任意颜色，即刻进入全屏色光。</p>
+      <div class="wheel-wrap"><canvas id="wheel" width="640" height="640" tabindex="0" aria-label="颜色盘：点击选色；键盘用户可在下方输入颜色代码" role="img"></canvas></div>
+      <div class="controls">
+        <div class="label-row"><label for="brightness">颜色明度</label><output id="brightness-value" for="brightness">100%</output></div>
+        <input id="brightness" type="range" min="0" max="100" value="100" aria-label="颜色明度">
+        <form id="hex-form" class="entry">
+          <span id="swatch" aria-hidden="true"></span>
+          <input id="hex" value="#80C4FF" aria-label="十六进制颜色代码" pattern="#[0-9a-fA-F]{6}" maxlength="7" spellcheck="false" autocomplete="off" required title="请输入 # 加 6 位颜色代码，例如 #FF8800">
+          <button type="submit">点亮屏幕</button>
+        </form>
+      </div>
+      <p class="hint">按任意键返回 · 手机可轻触屏幕返回<br>无需联网，下载后用浏览器打开即可。</p>
+    </section>
+  </main>
+  <div id="light" aria-hidden="true"></div>
+  <script>
+    'use strict';
+    const wheel = document.getElementById('wheel');
+    const ctx = wheel.getContext('2d');
+    const brightness = document.getElementById('brightness');
+    const brightnessValue = document.getElementById('brightness-value');
+    const hex = document.getElementById('hex');
+    const swatch = document.getElementById('swatch');
+    const light = document.getElementById('light');
+    let active = false;
+    let session = 0;
+    let previousFocus = null;
+    let selected = '#80C4FF';
+
+    function hsvToRgb(h, s, v) {
+      const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+      const sectors = [[c,x,0],[x,c,0],[0,c,x],[0,x,c],[x,0,c],[c,0,x]];
+      return sectors[Math.floor(h / 60) % 6].map(n => Math.round((n + m) * 255));
+    }
+    function toHex(rgb) { return '#' + rgb.map(n => n.toString(16).padStart(2, '0')).join('').toUpperCase(); }
+    function drawWheel() {
+      const size = wheel.width, center = size / 2, radius = center - 2;
+      const pixels = ctx.createImageData(size, size), v = Number(brightness.value) / 100;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const dx = x + .5 - center, dy = y + .5 - center;
+          const distance = Math.hypot(dx, dy);
+          if (distance > radius) continue;
+          const h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+          const rgb = hsvToRgb(h, distance / radius, v), i = (y * size + x) * 4;
+          pixels.data[i] = rgb[0]; pixels.data[i+1] = rgb[1]; pixels.data[i+2] = rgb[2];
+          pixels.data[i+3] = Math.round(Math.min(1, radius - distance) * 255);
+        }
+      }
+      ctx.putImageData(pixels, 0, 0);
+    }
+    function colorAt(event) {
+      const rect = wheel.getBoundingClientRect();
+      const dx = (event.clientX - rect.left) / rect.width * wheel.width - wheel.width / 2;
+      const dy = (event.clientY - rect.top) / rect.height * wheel.height - wheel.height / 2;
+      const radius = wheel.width / 2 - 2, distance = Math.hypot(dx, dy);
+      if (distance > radius) return null;
+      const h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+      return toHex(hsvToRgb(h, distance / radius, Number(brightness.value) / 100));
+    }
+    function preview(color) {
+      selected = color; hex.value = color; swatch.style.backgroundColor = color;
+    }
+    function returnToPicker() {
+      if (!active) return;
+      active = false; ++session;
+      document.body.classList.remove('lighting');
+      light.setAttribute('aria-hidden', 'true');
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      if (previousFocus && previousFocus.focus) previousFocus.focus({preventScroll: true});
+    }
+    function illuminate(color) {
+      if (active) return;
+      preview(color);
+      previousFocus = document.activeElement;
+      active = true;
+      const currentSession = ++session;
+      light.style.backgroundColor = color;
+      document.documentElement.style.setProperty('--light-color', color);
+      document.body.classList.add('lighting');
+      light.setAttribute('aria-hidden', 'false');
+      // The fullscreen request stays in the click gesture. If unsupported or denied,
+      // the solid overlay still fills the browser viewport.
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        try {
+          document.documentElement.requestFullscreen({navigationUI: 'hide'}).then(() => {
+            if ((!active || currentSession !== session) && document.fullscreenElement) {
+              document.exitFullscreen().catch(() => {});
+            }
+          }).catch(() => {});
+        } catch (_) {}
+      }
+    }
+    wheel.addEventListener('pointermove', event => {
+      if (active || event.pointerType === 'touch') return;
+      const color = colorAt(event); if (color) preview(color);
+    });
+    wheel.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      const color = colorAt(event);
+      if (color) { event.preventDefault(); illuminate(color); }
+    });
+    brightness.addEventListener('input', () => {
+      brightnessValue.textContent = brightness.value + '%'; drawWheel();
+    });
+    hex.addEventListener('input', () => {
+      if (/^#[0-9a-f]{6}$/i.test(hex.value)) { selected = hex.value.toUpperCase(); swatch.style.backgroundColor = selected; }
+    });
+    document.getElementById('hex-form').addEventListener('submit', event => {
+      event.preventDefault();
+      if (/^#[0-9a-f]{6}$/i.test(hex.value)) illuminate(hex.value.toUpperCase());
+    });
+    document.addEventListener('keydown', event => {
+      if (!active) return;
+      event.preventDefault(); event.stopPropagation(); returnToPicker();
+    }, true);
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) returnToPicker();
+    });
+    light.addEventListener('pointerdown', event => { event.preventDefault(); returnToPicker(); });
+    window.addEventListener('pagehide', returnToPicker);
+    drawWheel();
+  </script>
+</body>
+</html>
